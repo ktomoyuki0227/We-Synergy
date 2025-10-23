@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // サーバーサイド用のSupabaseクライアントを作成
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
