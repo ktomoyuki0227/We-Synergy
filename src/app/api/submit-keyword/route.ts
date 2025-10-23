@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-client'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createClient()
+    // サーバーサイド用のSupabaseクライアントを作成
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     // キーワードを保存
     const { data: keyword, error } = await supabase
