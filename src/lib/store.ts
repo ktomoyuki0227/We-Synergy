@@ -1,27 +1,24 @@
 import { create } from 'zustand'
+import { supabase } from './supabase'
 
 export interface User {
   id: string
   name: string
-}
-
-export interface Room {
-  id: string
-  name: string
-  host_id: string
+  created_at: string
 }
 
 export interface Keyword {
   id: string
-  room_id: string
   user_id: string
   word: string
   created_at: string
 }
 
-export interface DrawResult {
+export interface HistoryItem {
+  id: string
   keyword_a: string
   keyword_b: string
+  created_at: string
 }
 
 interface AppState {
@@ -29,38 +26,44 @@ interface AppState {
   user: User | null
   setUser: (user: User | null) => void
   
-  // ルーム情報
-  currentRoom: Room | null
-  setCurrentRoom: (room: Room | null) => void
-  
-  // キーワード一覧
+  // キーワード一覧（グローバルプール）
   keywords: Keyword[]
   setKeywords: (keywords: Keyword[]) => void
   addKeyword: (keyword: Keyword) => void
   
-  // 抽選結果
-  drawResult: DrawResult | null
-  setDrawResult: (result: DrawResult | null) => void
+  // 現在選ばれたキーワードペア
+  selected: [string, string] | null
+  setSelected: (selected: [string, string] | null) => void
   
-  // タイマー
-  timeLeft: number
-  setTimeLeft: (time: number) => void
+  // 抽選中フラグ
+  isDrawing: boolean
+  setIsDrawing: (isDrawing: boolean) => void
+  
+  // タイマー（残り時間）
+  timer: number
+  setTimer: (timer: number) => void
   
   // 履歴
-  history: DrawResult[]
-  setHistory: (history: DrawResult[]) => void
+  history: HistoryItem[]
+  setHistory: (history: HistoryItem[]) => void
   
   // 接続状態
   isConnected: boolean
   setIsConnected: (connected: boolean) => void
+  
+  // リアルタイム接続
+  subscribeToKeywords: () => void
+  subscribeToHistory: () => void
+  unsubscribeAll: () => void
 }
 
-export const useAppStore = create<AppState>((set) => ({
+// Realtime購読の管理
+let keywordsSubscription: any = null
+let historySubscription: any = null
+
+export const useAppStore = create<AppState>((set, get) => ({
   user: null,
   setUser: (user) => set({ user }),
-  
-  currentRoom: null,
-  setCurrentRoom: (room) => set({ currentRoom: room }),
   
   keywords: [],
   setKeywords: (keywords) => set({ keywords }),
@@ -68,15 +71,87 @@ export const useAppStore = create<AppState>((set) => ({
     keywords: [...state.keywords, keyword] 
   })),
   
-  drawResult: null,
-  setDrawResult: (result) => set({ drawResult: result }),
+  selected: null,
+  setSelected: (selected) => set({ selected }),
   
-  timeLeft: 0,
-  setTimeLeft: (time) => set({ timeLeft: time }),
+  isDrawing: false,
+  setIsDrawing: (isDrawing) => set({ isDrawing }),
+  
+  timer: 0,
+  setTimer: (timer) => set({ timer }),
   
   history: [],
   setHistory: (history) => set({ history }),
   
   isConnected: false,
   setIsConnected: (connected) => set({ isConnected: connected }),
+  
+  subscribeToKeywords: () => {
+    // 既存の購読を解除
+    if (keywordsSubscription) {
+      keywordsSubscription.unsubscribe()
+    }
+    
+    // キーワードのリアルタイム購読
+    keywordsSubscription = supabase
+      .channel('keywords-channel')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'keywords' 
+        }, 
+        (payload) => {
+          console.log('新しいキーワードが追加されました:', payload.new)
+          const newKeyword = payload.new as Keyword
+          set((state) => ({
+            keywords: [...state.keywords, newKeyword]
+          }))
+        }
+      )
+      .subscribe((status) => {
+        console.log('キーワード購読ステータス:', status)
+        set({ isConnected: status === 'SUBSCRIBED' })
+      })
+  },
+  
+  subscribeToHistory: () => {
+    // 既存の購読を解除
+    if (historySubscription) {
+      historySubscription.unsubscribe()
+    }
+    
+    // 履歴のリアルタイム購読
+    historySubscription = supabase
+      .channel('history-channel')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'history' 
+        }, 
+        (payload) => {
+          console.log('新しい履歴が追加されました:', payload.new)
+          const newHistoryItem = payload.new as HistoryItem
+          set((state) => ({
+            history: [newHistoryItem, ...state.history]
+          }))
+        }
+      )
+      .subscribe((status) => {
+        console.log('履歴購読ステータス:', status)
+      })
+  },
+  
+  unsubscribeAll: () => {
+    if (keywordsSubscription) {
+      keywordsSubscription.unsubscribe()
+      keywordsSubscription = null
+    }
+    if (historySubscription) {
+      historySubscription.unsubscribe()
+      historySubscription = null
+    }
+    set({ isConnected: false })
+  },
 }))
