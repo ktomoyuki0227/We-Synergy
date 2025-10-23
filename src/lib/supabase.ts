@@ -5,65 +5,42 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// データベースの型定義
+// データベースの型定義（ver.2：ルーム機能削除版）
 export interface Database {
   public: {
     Tables: {
       users: {
         Row: {
           id: string
-          name: string
+          name: string | null
           created_at: string
         }
         Insert: {
           id?: string
-          name: string
+          name?: string | null
           created_at?: string
         }
         Update: {
           id?: string
-          name?: string
-          created_at?: string
-        }
-      }
-      rooms: {
-        Row: {
-          id: string
-          name: string
-          host_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          host_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          host_id?: string
+          name?: string | null
           created_at?: string
         }
       }
       keywords: {
         Row: {
           id: string
-          room_id: string
           user_id: string
           word: string
           created_at: string
         }
         Insert: {
           id?: string
-          room_id: string
           user_id: string
           word: string
           created_at?: string
         }
         Update: {
           id?: string
-          room_id?: string
           user_id?: string
           word?: string
           created_at?: string
@@ -72,21 +49,18 @@ export interface Database {
       history: {
         Row: {
           id: string
-          room_id: string
           keyword_a: string
           keyword_b: string
           created_at: string
         }
         Insert: {
           id?: string
-          room_id: string
           keyword_a: string
           keyword_b: string
           created_at?: string
         }
         Update: {
           id?: string
-          room_id?: string
           keyword_a?: string
           keyword_b?: string
           created_at?: string
