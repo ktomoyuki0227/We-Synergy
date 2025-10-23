@@ -3,25 +3,17 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
-    const { roomId } = await request.json()
-    
-    if (!roomId) {
-      return NextResponse.json(
-        { error: 'ルームIDが必要です' },
-        { status: 400 }
-      )
-    }
-
     // サーバーサイド用のSupabaseクライアントを作成
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    // ルーム内のキーワードを取得
+    // グローバルキーワードプールから取得
     const { data: keywords, error: keywordsError } = await supabase
       .from('keywords')
       .select('*')
-      .eq('room_id', roomId)
+      .order('created_at', { ascending: false })
+      .limit(100) // 最新100件から抽選
 
     if (keywordsError) {
       console.error('キーワード取得エラー:', keywordsError)
@@ -51,7 +43,6 @@ export async function POST(request: NextRequest) {
     const { error: historyError } = await supabase
       .from('history')
       .insert({
-        room_id: roomId,
         keyword_a: result.keyword_a,
         keyword_b: result.keyword_b
       })
