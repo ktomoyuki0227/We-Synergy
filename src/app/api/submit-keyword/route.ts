@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
-    const { roomId, userId, word } = await request.json()
+    const { userId, word } = await request.json()
     
-    if (!roomId || !userId || !word) {
+    if (!userId || !word) {
       return NextResponse.json(
-        { error: 'ルームID、ユーザーID、キーワードが必要です' },
+        { error: 'ユーザーIDとキーワードが必要です' },
         { status: 400 }
       )
     }
@@ -17,11 +17,10 @@ export async function POST(request: NextRequest) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    // キーワードを保存
+    // キーワードを保存（グローバルプール）
     const { data: keyword, error } = await supabase
       .from('keywords')
       .insert({ 
-        room_id: roomId,
         user_id: userId,
         word: word.trim()
       })
