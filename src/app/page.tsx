@@ -113,7 +113,8 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        throw new Error('キーワードの送信に失敗しました')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'キーワードの送信に失敗しました')
       }
 
       const { keyword: newKeyword } = await response.json()
@@ -239,7 +240,9 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
+          {/* メインコンテンツエリア */}
+          <div className="flex-1">
           {/* 抽選結果表示 */}
           <AnimatePresence>
             {selected && (
@@ -288,10 +291,8 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* 左側: キーワード入力・一覧 */}
-            <div className="space-y-8">
-              {/* キーワード入力 */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* 左側: キーワード入力 */}
               <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm">
                 <CardHeader className="text-center pb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -312,7 +313,7 @@ export default function Home() {
                   />
                   <Button 
                     onClick={handleSubmitKeyword}
-                    disabled={!keyword.trim()}
+                    disabled={!keyword.trim() || !user}
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     ✨ キーワードを投稿
@@ -320,47 +321,7 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              {/* キーワード一覧 */}
-              <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm">
-                <CardHeader className="text-center pb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">📝</span>
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">投稿されたキーワード</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-400 text-base">
-                    <span className="text-blue-600 dark:text-blue-400 font-semibold">{keywords.length}個</span>のキーワードが投稿されています
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    {keywords.map((kw) => (
-                      <motion.div
-                        key={kw.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-800 dark:text-blue-200 px-4 py-3 rounded-xl text-center font-semibold shadow-md hover:shadow-lg transition-shadow"
-                      >
-                        {kw.word}
-                      </motion.div>
-                    ))}
-                  </div>
-                  {keywords.length === 0 && (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-2xl text-slate-400">📝</span>
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-lg">
-                        まだキーワードが投稿されていません
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 右側: 抽選・履歴 */}
-            <div className="space-y-8">
-              {/* 抽選ボタン */}
+              {/* 右側: 抽選ボタン */}
               <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm">
                 <CardHeader className="text-center pb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -382,48 +343,95 @@ export default function Home() {
                   </Button>
                 </CardContent>
               </Card>
-
-              {/* 履歴 */}
-              <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm">
-                <CardHeader className="text-center pb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">📚</span>
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">抽選履歴</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-400 text-base">
-                    過去の抽選結果を確認できます
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 max-h-64 overflow-y-auto">
-                    {history.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 p-4 rounded-lg"
-                      >
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                            {item.keyword_a} × {item.keyword_b}
-                          </div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">
-                            {new Date(item.created_at).toLocaleString('ja-JP')}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                  {history.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-slate-500 dark:text-slate-400">
-                        まだ抽選履歴がありません
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
+
+            {/* キーワード一覧 */}
+            <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm mt-8">
+              <CardHeader className="text-center pb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📝</span>
+                </div>
+                <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">投稿されたキーワード</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400 text-base">
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">{keywords.length}個</span>のキーワードが投稿されています
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {keywords.map((kw) => (
+                    <motion.div
+                      key={kw.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-800 dark:text-blue-200 px-4 py-3 rounded-xl text-center font-semibold shadow-md hover:shadow-lg transition-shadow"
+                    >
+                      {kw.word}
+                    </motion.div>
+                  ))}
+                </div>
+                {keywords.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl text-slate-400">📝</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-lg">
+                      まだキーワードが投稿されていません
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 右側サイドバー: 履歴 */}
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <Card className="shadow-xl border-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm sticky top-8">
+              <CardHeader className="text-center pb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">抽選履歴</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400 text-sm">
+                  過去の抽選結果
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {history.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 p-3 rounded-lg"
+                    >
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">
+                          {item.keyword_a} × {item.keyword_b}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(item.created_at).toLocaleString('ja-JP', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                {history.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="text-xl text-slate-400">📚</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      まだ抽選履歴がありません
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
