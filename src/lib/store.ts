@@ -67,9 +67,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   keywords: [],
   setKeywords: (keywords) => set({ keywords }),
-  addKeyword: (keyword) => set((state) => ({ 
-    keywords: [...state.keywords, keyword] 
-  })),
+  addKeyword: (keyword) => set((state) => {
+    // 重複を防ぐ
+    const exists = state.keywords.some(kw => kw.id === keyword.id)
+    if (exists) return state
+    return { keywords: [...state.keywords, keyword] }
+  }),
   
   selected: null,
   setSelected: (selected) => set({ selected }),
@@ -104,9 +107,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         (payload) => {
           console.log('新しいキーワードが追加されました:', payload.new)
           const newKeyword = payload.new as Keyword
-          set((state) => ({
-            keywords: [...state.keywords, newKeyword]
-          }))
+          set((state) => {
+            // 重複を防ぐ
+            const exists = state.keywords.some(kw => kw.id === newKeyword.id)
+            if (exists) return state
+            return { keywords: [...state.keywords, newKeyword] }
+          })
         }
       )
       .subscribe((status) => {
@@ -133,9 +139,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         (payload) => {
           console.log('新しい履歴が追加されました:', payload.new)
           const newHistoryItem = payload.new as HistoryItem
-          set((state) => ({
-            history: [newHistoryItem, ...state.history]
-          }))
+          set((state) => {
+            // 重複を防ぐ
+            const exists = state.history.some(item => item.id === newHistoryItem.id)
+            if (exists) return state
+            return { history: [newHistoryItem, ...state.history] }
+          })
         }
       )
       .subscribe((status) => {
